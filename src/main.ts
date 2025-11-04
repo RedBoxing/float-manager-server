@@ -1,6 +1,4 @@
-import { connect } from 'mqtt'
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { FloatManagerServer } from "./server.ts"
 
-const db = drizzle(Deno.env.get("DATABASE_URL")!);
-
-const client = connect("mqtt://localhost")
+const server = new FloatManagerServer();
+server.start();

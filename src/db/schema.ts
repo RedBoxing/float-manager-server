@@ -25,14 +25,20 @@ export const orders = pgTable("orders", {
   status: integer().notNull()
 })
 
+export const truckModels = pgTable("truckModels", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  fuel_capacity: decimal().notNull(),
+  storage_capacity: decimal().notNull(),
+});
+
 export const trucks = pgTable("trucks", {
   id: uuid().primaryKey().defaultRandom(),
+  model: integer().notNull().references(() => truckModels.id),
+  departure_address: uuid().notNull().references(() => addresses.id),
   longitude: decimal().notNull(),
   latitude: decimal().notNull(),
   current_order_id: uuid().references(() => orders.id),
   state: integer().default(0),
   fuel_quantity: decimal().notNull(),
-  fuel_capacity: decimal().notNull(),
-  storage_capacity: decimal().notNull()
 });
 
