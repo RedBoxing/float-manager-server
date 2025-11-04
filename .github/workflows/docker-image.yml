@@ -47,8 +47,8 @@ jobs:
           context: .
           push: true
           tags: |
-            git.autisticpeoples.party/RedBoxing/${{ github.event.repository.name }}:${{ steps.extract_branch.outputs.branch_name }}
-            git.autisticpeoples.party/RedBoxing/${{ github.event.repository.name }}:latest
+            git.autisticpeoples.party/redboxing/${{ github.event.repository.name }}:${{ steps.extract_branch.outputs.branch_name }}
+            git.autisticpeoples.party/redboxing/${{ github.event.repository.name }}:latest
 
       - name: Build Docker image (PR only)
         if: github.event_name == 'pull_request'
@@ -56,4 +56,4 @@ jobs:
         with:
           context: .
           push: false
-          tags: git.autisticpeoples.party/RedBoxing/${{ github.event.repository.name }}:pr-${{ github.event.number }}
+          tags: git.autisticpeoples.party/redboxing/${{ github.event.repository.name }}:pr-${{ github.event.number }}
