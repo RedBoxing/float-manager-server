@@ -3,6 +3,7 @@ FROM denoland/deno:2.5.6
 EXPOSE 3000
 
 WORKDIR /app
+RUN chown -R deno:deno /app
 USER deno
 
 COPY . .
