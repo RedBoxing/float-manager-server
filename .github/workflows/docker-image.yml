@@ -3,10 +3,12 @@ name: Build and Push Docker Image
 on:
   push:
     branches:
-      - '**'  # Trigger on all branches
-  pull_request:
-    branches:
-      - '**'  # Also build on PRs (but won't push)
+      - '**'
+    tags: [ 'v*.*.*' ]
+
+env:
+  REGISTRY: git.autisticpeoples.party
+  IMAGE_NAME: redboxing/${{ github.event.repository.name }}
 
 jobs:
   build-and-push:
@@ -18,42 +20,24 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to GitLab Registry
+      - name: Login to Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
-          registry: git.autisticpeoples.party
+          registry: ${{ env.REGISTRY }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Extract branch name
-        id: extract_branch
-        run: |
-          # Handle different ref formats
-          if [[ "${{ github.ref }}" == refs/heads/* ]]; then
-            BRANCH_NAME="${{ github.ref_name }}"
-          else
-            BRANCH_NAME="unknown"
-          fi
-          
-          # Replace / with - for branch names like feature/new-feature
-          SANITIZED_BRANCH=$(echo "$BRANCH_NAME" | sed 's/\//-/g')
-          echo "branch_name=$SANITIZED_BRANCH" >> $GITHUB_OUTPUT
+       - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Build and push Docker image
-        if: github.event_name != 'pull_request'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
-          tags: |
-            git.autisticpeoples.party/redboxing/${{ github.event.repository.name }}:${{ steps.extract_branch.outputs.branch_name }}
-            git.autisticpeoples.party/redboxing/${{ github.event.repository.name }}:latest
-
-      - name: Build Docker image (PR only)
-        if: github.event_name == 'pull_request'
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: false
-          tags: git.autisticpeoples.party/redboxing/${{ github.event.repository.name }}:pr-${{ github.event.number }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
