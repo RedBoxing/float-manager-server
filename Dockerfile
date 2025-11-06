@@ -2,9 +2,6 @@ FROM denoland/deno:2.5.6
 
 ARG GIT_COMMIT
 ARG VERSION
-ARG GITHUB_TOKEN
-RUN echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > ~/.npmrc && \
-    echo "@kaplego:registry=https://npm.pkg.github.com/" >> ~/.npmrc
 
 EXPOSE 3000
 
@@ -16,6 +13,9 @@ USER deno
 COPY . .
 RUN echo "GIT_COMMIT=${GIT_COMMIT:-$(git rev-parse HEAD)}" > .env
 RUN echo "VERSION=${VERSION}" >> .env
+RUN --mount=type=secret,id=github_token,env=GITHUB_TOKEN \ 
+    echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > .npmrc && \
+    echo "@kaplego:registry=https://npm.pkg.github.com/" >> .npmrc
 
 RUN deno install
 
