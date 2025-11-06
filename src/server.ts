@@ -1,4 +1,5 @@
 import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
 import express from "express";
 import { Server, Socket } from "socket.io";
 import { createServer, Server as HttpServer } from "node:http";
@@ -15,6 +16,9 @@ export class FloatManagerServer {
 
   constructor() {
     this.db = drizzle(Deno.env.get("DATABASE_URL")!);
+
+    migrate(this.db, { migrationsFolder: "./drizzle" });
+
     this.api = express();
     this.server = createServer(this.api);
     this.io = new Server(this.server);
