@@ -64,8 +64,8 @@ spec:
           {{- if or .Values.database.password .Values.database.existingSecret -}}
             {{- include "float-manager-server.databaseUrl" . | nindent 12 }}
           {{- end }}
-          - name: KAFKA_BROKERS
-            value: {{ .Values.kafka.brokers | join ";" }}
+            - name: KAFKA_BROKERS
+              value: {{ .Values.kafka.brokers | join ";" }}
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}
