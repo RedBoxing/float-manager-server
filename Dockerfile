@@ -14,4 +14,6 @@ COPY . .
 RUN echo "GIT_COMMIT=${GIT_COMMIT:-$(git rev-parse HEAD)}" > .env
 RUN echo "VERSION=${VERSION}" >> .env
 
+RUN deno install
+
 CMD ["run", "--allow-env", "--allow-net", "src/main.ts"]
