@@ -1,27 +1,35 @@
 import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import express from "express";
-import { Server, Socket } from "socket.io";
 import { createServer, Server as HttpServer } from "node:http";
-import { addresses, truckModels, trucks } from "./db/schema.ts";
-import { eq, inArray, sql } from "drizzle-orm";
+import { addressesTable, truckModelsTable, trucksTable } from "./db/schema.ts";
+import { eq, sql } from "drizzle-orm";
+import { Kafka, Consumer } from "kafkajs";
+import { Truck, WithOneAddress, WithOneModel } from "@kaplego/floatcommon";
 
 export class FloatManagerServer {
   private db: NodePgDatabase;
   private api: express.Application;
   private server: HttpServer;
-  private io: Server;
-  private connectedTrucks: string[] = [];
-  private connectedClients: Socket[] = [];
+  private kafka: Kafka;
+  private kafkaConsumer: Consumer;
 
   constructor() {
     this.db = drizzle(Deno.env.get("DATABASE_URL")!);
-
     migrate(this.db, { migrationsFolder: "./drizzle" });
 
     this.api = express();
     this.server = createServer(this.api);
-    this.io = new Server(this.server);
+
+    this.kafka = new Kafka({
+      clientId: Deno.env.get("HOSTNAME") || "float-manager-server",
+      brokers: (Deno.env.get("KAFKA_BROKERS") || "").split(";"),
+    });
+
+    this.kafkaConsumer = this.kafka.consumer({
+      groupId:
+        (Deno.env.get("HOSTNAME") || "float-manager-server") + "-consumer",
+    });
 
     this.api.get("/health", (req, res) => {
       res.send("OK");
@@ -44,109 +52,107 @@ export class FloatManagerServer {
     });
 
     this.api.get("/trucks", async (req, res) => {
-      if (this.connectedTrucks.length == 0) {
-        res.json([]);
-        return;
-      }
-
-      const result = await this.db
-        .select()
-        .from(trucks)
-        .where(inArray(trucks.id, this.connectedTrucks));
-      res.json(result);
+      res.json(await this.get_all_trucks());
     });
 
-    this.io.on("connection", (socket) => {
-      console.log("new connection");
-      let current_id: string = "";
+    this.api.get("/truck/:truck_id", async (req, res) => {
+      const { truck_id } = req.params;
+      const truck = await this.get_truck(truck_id);
+      res.json(truck as WithOneModel<WithOneAddress<Truck>>);
+    });
 
-      socket.on("setup_client", () => {
-        this.connectedClients.push(socket);
-      });
+    this.api.post("/truck", async (req, res) => {
+      const models = await this.db
+        .select()
+        .from(truckModelsTable)
+        .orderBy(sql`RAND()`)
+        .limit(1);
+      if (models.length == 0) {
+        console.error("No models founds");
+      }
+      const truckModel = models[0];
 
-      socket.on("request_id", async () => {
-        const models = await this.db
-          .select()
-          .from(truckModels)
-          .orderBy(sql`RAND()`)
-          .limit(1);
-        if (models.length == 0) {
-          console.error("No models founds");
-        }
-        const truckModel = models[0];
+      const randomAddress = await this.db
+        .select()
+        .from(addressesTable)
+        .orderBy(sql`RAND()`)
+        .limit(1);
+      if (models.length == 0) {
+        console.error("No addresses found");
+      }
+      const departureAddress = randomAddress[0];
 
-        const randomAddress = await this.db
-          .select()
-          .from(addresses)
-          .orderBy(sql`RAND()`)
-          .limit(1);
-        if (models.length == 0) {
-          console.error("No addresses found");
-        }
-        const departureAddress = randomAddress[0];
+      const truck: typeof trucksTable.$inferInsert = {
+        model_id: truckModel.id,
+        fuel_quantity: truckModel.fuel_capacity,
+        departure_address_id: departureAddress.id,
+        longitude: 0.0,
+        latitude: 0.0,
+      };
 
-        const truck: typeof trucks.$inferInsert = {
-          model: truckModel.id,
-          fuel_quantity: truckModel.fuel_capacity,
-          departure_address: departureAddress.id,
-          longitude: "0.0",
-          latitude: "0.0",
-        };
-
-        await this.db.insert(trucks).values(truck);
-        current_id = truck.id!;
-        this.connectedTrucks.push(current_id);
-
-        socket.emit("truck_data", truck);
-      });
-
-      socket.on("request_data", async (data) => {
-        const truck = (
-          await this.db.select().from(trucks).where(eq(trucks.id, data.id))
-        )[0];
-        current_id = truck.id;
-        this.connectedTrucks.push(current_id);
-        socket.emit("truck_data", truck);
-      });
-
-      socket.on("position", async (data) => {
-        if (current_id == "") {
-          return;
-        }
-
-        await this.db
-          .update(trucks)
-          .set({ longitude: data.longitude, latitude: data.latitude })
-          .where(eq(trucks.id, current_id));
-
-        for (const sock of this.connectedClients) {
-          sock.emit("truck_update", {
-            id: current_id,
-            longitude: data.longitude,
-            latitude: data.latitude,
-          });
-        }
-      });
-
-      socket.on("disconnect", () => {
-        console.log("lost connection");
-
-        let index = this.connectedTrucks.indexOf(current_id);
-        if (index >= 0) {
-          this.connectedTrucks.splice(index, 1);
-        }
-
-        index = this.connectedClients.indexOf(socket);
-        if (index >= 0) {
-          this.connectedClients.splice(index, 1);
-        }
-      });
+      await this.db.insert(trucksTable).values(truck);
+      res.json(truck as WithOneModel<WithOneAddress<Truck>>);
     });
   }
 
-  start() {
+  async get_truck(id: string): Promise<Truck | null> {
+    const trucks = await this.db
+      .select()
+      .from(trucksTable)
+      .where(eq(trucksTable.id, id));
+
+    if (trucks.length == 0) {
+      return null;
+    }
+
+    return trucks[0] as Truck;
+  }
+
+  async get_all_trucks(): Promise<Truck[]> {
+    const trucks = await this.db.select().from(trucksTable);
+    return trucks as Truck[];
+  }
+
+  async start() {
+    await this.kafkaConsumer.connect();
+    await this.kafkaConsumer.subscribe({
+      topics: ["truck-telemetry"],
+    });
+
     this.server.listen(3000, () => {
       console.log("server running at http://localhost:3000");
+    });
+
+    await this.kafkaConsumer.run({
+      eachMessage: async ({ topic, partition, message }) => {
+        console.log(`[${partition}] [${topic}] ${message.value?.toString()}`);
+
+        if (message.value == null) {
+          console.log("Got empty message!");
+          return;
+        }
+
+        const data = JSON.parse(message.value.toString());
+        const { truck_id } = data;
+
+        if (truck_id == undefined) {
+          console.log("Got message without any truck_id!");
+          return;
+        }
+
+        switch (topic) {
+          case "truck-telemetry": {
+            const { longitude, latitude, state, fuel_quantity } = data;
+
+            await this.db
+              .update(trucksTable)
+              .set({ longitude, latitude, state, fuel_quantity })
+              .where(eq(trucksTable.id, truck_id));
+
+            break;
+          }
+        }
+      },
     });
   }
 }
