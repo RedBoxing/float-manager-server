@@ -24,6 +24,12 @@ export class FloatManagerServer {
     this.kafka = new Kafka({
       clientId: Deno.env.get("HOSTNAME") || "float-manager-server",
       brokers: (Deno.env.get("KAFKA_BROKERS") || "").split(";"),
+      ssl: {
+        rejectUnauthorized: false,
+        ca: [Deno.readTextFileSync("certs/ca.crt")],
+        key: Deno.readTextFileSync("certs/privkey.pem"),
+        cert: Deno.readTextFileSync("certs/fullchain.pem")
+      }
     });
 
     this.kafkaConsumer = this.kafka.consumer({
@@ -114,6 +120,8 @@ export class FloatManagerServer {
   }
 
   async start() {
+    console.log("Starting server");
+
     await this.kafkaConsumer.connect();
     await this.kafkaConsumer.subscribe({
       topics: ["truck-telemetry"],

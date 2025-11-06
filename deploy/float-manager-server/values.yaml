@@ -15,9 +15,16 @@ database:
 
   existingSecret: ""
   existingSecretKey: ""
-
+  
 kafka:
-  brokers: []
+  brokers: [] 
+  tls:
+    ca: 
+      secretName: 
+      SecretKey:
+    secretName: 
+    keySecretKey:
+    certSecretKey:
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:

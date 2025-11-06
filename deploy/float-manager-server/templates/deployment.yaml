@@ -56,20 +56,45 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.volumeMounts }}
           volumeMounts:
+            {{- with .Values.volumeMounts }}
             {{- toYaml . | nindent 12 }}
-          {{- end }}
+            {{- end }}
+            {{- if .Values.kafka.tls.certSecretKey }}
+            - name: kafka-cert-secret
+              mountPath: /app/certs/fullchain.pem
+              subPath: {{ .Values.kafka.tls.certSecretKey }}
+            {{- end }}
+            {{- if .Values.kafka.tls.keySecretKey }}
+            - name: kafka-cert-secret
+              mountPath: /app/certs/privkey.pem
+              subPath: {{ .Values.kafka.tls.keySecretKey }}
+            {{- end }}
+            {{- if .Values.kafka.tls.ca.secretKey }}
+            - name: kafka-ca-secret
+              mountPath: /app/certs/ca.crt
+              subPath: {{ .Values.kafka.tls.ca.secretKey }}
+            {{- end }}
           env:
           {{- if or .Values.database.password .Values.database.existingSecret -}}
             {{- include "float-manager-server.databaseUrl" . | nindent 12 }}
           {{- end }}
             - name: KAFKA_BROKERS
               value: {{ .Values.kafka.brokers | join ";" }}
-      {{- with .Values.volumes }}
       volumes:
+        {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
+        {{- if .Values.kafka.tls.ca.secretName }}
+        - name: kafka-ca-secret
+          secret:
+            secretName: {{ .Values.kafka.tls.ca.secretName }}
+        {{- end }}
+        {{- if .Values.kafka.tls.secretName }}
+        - name: kafka-cert-secret
+          secret:
+            secretName: {{ .Values.kafka.tls.secretName }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
