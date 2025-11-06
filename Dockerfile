@@ -16,4 +16,4 @@ RUN echo "VERSION=${VERSION}" >> .env
 
 RUN deno install
 
-CMD ["run", "--allow-env", "--env-file", "--allow-net", "src/main.ts"]
+CMD ["run", "--allow-env", "--env-file", "--allow-net", "--allow-read", "src/main.ts"]
