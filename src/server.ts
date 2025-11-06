@@ -22,6 +22,25 @@ export class FloatManagerServer {
       res.send("OK");
     })
 
+    this.api.get("/version", (req, res) => {
+      // In production, use semantic versioning (vX.Y.Z)
+      // Check for a VERSION environment variable first, then fall back to GIT_COMMIT
+      const isProduction = Deno.env.get("NODE_ENV") === "production" || 
+                          Deno.env.get("DENO_ENV") === "production" ||
+                          Deno.env.get("APP_ENV") === "production";
+      
+      let version: string;
+      if (isProduction) {
+        // Use VERSION env var if available (expected to be in vX.Y.Z format)
+        version = Deno.env.get("VERSION") || "v0.0.0";
+      } else {
+        // In development, use git commit hash
+        version = Deno.env.get("GIT_COMMIT") || "dev";
+      }
+      
+      res.json({ version });
+    })
+
     this.api.get("/trucks", async (req, res) => {
       if(this.connectedTrucks.length == 0) {
         res.json([]);
