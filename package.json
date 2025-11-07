@@ -1,0 +1,47 @@
+{
+	"name": "float-manager-server",
+	"version": "1.0.0",
+	"description": "Trucks go brrrrrrr",
+	"keywords": [
+		"typescript"
+	],
+	"homepage": "https://github.com/RedBoxing/float-manager-server#readme",
+	"bugs": {
+		"url": "https://github.com/RedBoxing/float-manager-server/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/RedBoxing/float-manager-server.git"
+	},
+	"license": "GPL-3.0-or-later",
+	"author": "RedBoxing",
+	"type": "commonjs",
+	"main": "dist/main.js",
+	"scripts": {
+		"prepare": "husky",
+		"build": "tsc",
+		"start": "node dist/main.js",
+		"dev:build": "tsc --watch",
+		"dev:start": "nodemon dist/main.js",
+		"format:check": "prettier . --check",
+		"format:write": "prettier . --write"
+	},
+	"dependencies": {
+		"@kaplego/floatcommon": "^1.0.4",
+		"@prisma/client": "^6.19.0",
+		"@types/cors": "^2.8.19",
+		"@types/express": "^5.0.5",
+		"@types/pg": "^8.15.6",
+		"commander": "^14.0.2",
+		"cors": "^2.8.5",
+		"dotenv": "^17.2.3",
+		"express": "^5.1.0",
+		"husky": "^9.1.7",
+		"kafkajs": "^2.2.4",
+		"pg": "^8.16.3",
+		"prisma": "^6.19.0"
+	},
+	"devDependencies": {
+		"@types/node": "^24.10.0"
+	}
+}

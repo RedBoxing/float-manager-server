@@ -44,15 +44,11 @@ spec:
           image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag | default .Chart.AppVersion }}@{{ .Values.worker.image.digest }}"
           imagePullPolicy: {{ .Values.worker.image.pullPolicy }}
           command:
-            - deno
+            - npm
           args:
           - run
-          - --allow-env
-          - --env-file
-          - --allow-net
-          - --allow-read
-          - src/main.ts
-          -  start-worker
+          - start
+          - start-worker
           {{- with .Values.worker.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}

@@ -1,4 +1,4 @@
-FROM denoland/deno:2.5.6
+FROM node:24
 
 ARG GIT_COMMIT
 ARG VERSION
@@ -7,7 +7,7 @@ EXPOSE 3000
 
 WORKDIR /app
 RUN chown -R deno:deno /app
-USER deno
+USER node
 
 # Get the git commit hash
 COPY . .
@@ -17,6 +17,6 @@ RUN --mount=type=secret,id=github_token,env=GITHUB_TOKEN \
     echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > .npmrc && \
     echo "@kaplego:registry=https://npm.pkg.github.com/" >> .npmrc
 
-RUN deno install
+RUN npm run ci
 
-CMD ["run", "--allow-env", "--env-file", "--allow-net", "--allow-read", "src/main.ts"]
+CMD ["dist/main.js"]
