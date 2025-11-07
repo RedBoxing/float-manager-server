@@ -6,6 +6,7 @@ import {
   numeric,
   boolean,
   char,
+  timestamp,
 } from "drizzle-orm/pg-core";
 
 export const usersTable = pgTable("users", {
@@ -39,6 +40,7 @@ export const ordersTable = pgTable("orders", {
 
 export const truckModelsTable = pgTable("truckModels", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  name: varchar({ length: 255 }).notNull(),
   fuel_capacity: numeric<"number">().notNull(),
   storage_capacity: numeric<"number">().notNull(),
 });
@@ -56,4 +58,13 @@ export const trucksTable = pgTable("trucks", {
   current_order_id: uuid().references(() => ordersTable.id),
   state: integer().default(0),
   fuel_quantity: numeric<"number">().notNull(),
+});
+
+export const truckLocationsTable = pgTable("truckLocations", {
+  truck_id: uuid()
+    .primaryKey()
+    .references(() => trucksTable.id),
+  timestamp: timestamp().primaryKey(),
+  longitude: numeric<"number">().notNull(),
+  latitude: numeric<"number">().notNull(),
 });

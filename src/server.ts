@@ -2,10 +2,20 @@ import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import express from "express";
 import { createServer, Server as HttpServer } from "node:http";
-import { addressesTable, truckModelsTable, trucksTable } from "./db/schema.ts";
+import {
+  addressesTable,
+  truckLocationsTable,
+  truckModelsTable,
+  trucksTable,
+} from "./db/schema.ts";
 import { eq, sql } from "drizzle-orm";
 import { Kafka, Consumer } from "kafkajs";
-import { Truck, WithOneAddress, WithOneModel } from "@kaplego/floatcommon";
+import {
+  Truck,
+  TruckModel,
+  WithOneAddress,
+  WithOneModel,
+} from "@kaplego/floatcommon";
 
 export class FloatManagerBaseServer {
   protected db: NodePgDatabase;
@@ -62,6 +72,31 @@ export class FloatManagerAPIServer extends FloatManagerBaseServer {
       }
 
       res.json({ version });
+    });
+
+    this.api.post("/trucks/models", async (req, res) => {
+      try {
+        const data: TruckModel = req.body;
+        const model: typeof truckModelsTable.$inferInsert = data;
+        await this.db.insert(truckModelsTable).values(model);
+        res.json(model);
+      } catch (err) {
+        res.json({
+          error: true,
+          message: err,
+        });
+      }
+    });
+
+    this.api.get("/trucks/models", async (req, res) => {
+      try {
+        res.json(await this.db.select().from(truckModelsTable));
+      } catch (err) {
+        res.json({
+          error: true,
+          message: err,
+        });
+      }
     });
 
     this.api.get("/trucks", async (req, res) => {
@@ -167,13 +202,22 @@ export class FloatWorkerNode extends FloatManagerBaseServer {
 
         switch (topic) {
           case "truck-telemetry": {
-            const { longitude, latitude, state, fuel_quantity } = data;
+            const { longitude, latitude, state, fuel_quantity, timestamp } =
+              data;
 
             await this.db
               .update(trucksTable)
               .set({ longitude, latitude, state, fuel_quantity })
               .where(eq(trucksTable.id, truck_id));
 
+            const location: typeof truckLocationsTable.$inferInsert = {
+              truck_id: truck_id,
+              timestamp: timestamp,
+              longitude,
+              latitude,
+            };
+
+            await this.db.insert(truckLocationsTable).values(location);
             break;
           }
         }
