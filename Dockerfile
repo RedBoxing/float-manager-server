@@ -6,7 +6,7 @@ ARG VERSION
 EXPOSE 3000
 
 WORKDIR /app
-RUN chown -R deno:deno /app
+RUN chown -R node:node /app
 USER node
 
 # Get the git commit hash
