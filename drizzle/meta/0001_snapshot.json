@@ -1,5 +1,5 @@
 {
-  "id": "5d0898ed-9485-44a3-9bbf-871631f694f2",
+  "id": "bb972ecd-9e00-4ebf-b7fa-f56e08a1c849",
   "prevId": "07cb209c-6ced-4d72-8b36-0bf5b4012940",
   "version": "7",
   "dialect": "postgresql",
@@ -132,13 +132,13 @@
         "truck_id": {
           "name": "truck_id",
           "type": "uuid",
-          "primaryKey": true,
+          "primaryKey": false,
           "notNull": true
         },
         "timestamp": {
           "name": "timestamp",
           "type": "timestamp",
-          "primaryKey": true,
+          "primaryKey": false,
           "notNull": true
         },
         "longitude": {
@@ -170,7 +170,15 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {},
+      "compositePrimaryKeys": {
+        "truckLocations_truck_id_timestamp_pk": {
+          "name": "truckLocations_truck_id_timestamp_pk",
+          "columns": [
+            "truck_id",
+            "timestamp"
+          ]
+        }
+      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},

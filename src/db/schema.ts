@@ -7,6 +7,7 @@ import {
   boolean,
   char,
   timestamp,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 
 export const usersTable = pgTable("users", {
@@ -60,11 +61,19 @@ export const trucksTable = pgTable("trucks", {
   fuel_quantity: numeric<"number">().notNull(),
 });
 
-export const truckLocationsTable = pgTable("truckLocations", {
-  truck_id: uuid()
-    .primaryKey()
-    .references(() => trucksTable.id),
-  timestamp: timestamp().primaryKey(),
-  longitude: numeric<"number">().notNull(),
-  latitude: numeric<"number">().notNull(),
-});
+export const truckLocationsTable = pgTable(
+  "truckLocations",
+  {
+    truck_id: uuid()
+      .notNull()
+      .references(() => trucksTable.id),
+    timestamp: timestamp().notNull(),
+    longitude: numeric<"number">().notNull(),
+    latitude: numeric<"number">().notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.truck_id, table.timestamp],
+    }),
+  ]
+);

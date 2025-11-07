@@ -1,8 +1,9 @@
 CREATE TABLE "truckLocations" (
-	"truck_id" uuid PRIMARY KEY NOT NULL,
-	"timestamp" timestamp PRIMARY KEY NOT NULL,
+	"truck_id" uuid NOT NULL,
+	"timestamp" timestamp NOT NULL,
 	"longitude" numeric NOT NULL,
-	"latitude" numeric NOT NULL
+	"latitude" numeric NOT NULL,
+	CONSTRAINT "truckLocations_truck_id_timestamp_pk" PRIMARY KEY("truck_id","timestamp")
 );
 --> statement-breakpoint
 ALTER TABLE "trucks" RENAME COLUMN "model" TO "model_id";--> statement-breakpoint
