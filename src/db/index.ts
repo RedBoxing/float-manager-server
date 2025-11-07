@@ -1,11 +1,18 @@
 import {
 	Address,
+	HasUndefined,
 	Order,
+	DBTruck,
 	Truck,
-	TruckModel,
+	TruckLocation,
 	WithOneAddress,
-	WithOneModel,
+	WithOneTruckModel,
 	WithOneOrder,
+	DBOrder,
+	HasNullable,
+	DBAddress,
+	DBTruckModel,
+	DBTruckLocation,
 } from '@kaplego/floatcommon';
 import { PrismaClient } from '@prisma/client';
 import { exec } from 'node:child_process';
@@ -27,113 +34,55 @@ export class Database {
 		}
 	}
 
-	async get_truck(truck_id: string): Promise<Truck | null> {
-		const truck = await this.db.trucks.findUnique({
+	async get_truck(truck_id: string): Promise<DBTruck | null> {
+		return await this.db.truck.findUnique({
 			where: {
 				id: truck_id,
 			},
 		});
-
-		return truck == null
-			? null
-			: {
-					...truck,
-					longitude: truck.longitude.toNumber(),
-					latitude: truck.latitude.toNumber(),
-					fuel_quantity: truck.fuel_quantity.toNumber(),
-				};
 	}
 
 	async get_truck_joined(
 		truck_id: string,
 	): Promise<
-		| WithOneModel<
-				WithOneAddress<WithOneOrder<Truck, WithOneAddress<Order>>>
-		  >
-		| (WithOneModel<WithOneAddress<Truck>> & { current_order: null })
+		| (DBTruck &
+				WithOneAddress<DBTruck, false, DBAddress> &
+				WithOneTruckModel<DBTruck, false, DBTruckModel> &
+				WithOneOrder<
+					DBTruck,
+					true,
+					DBOrder & WithOneAddress<DBOrder, false, DBAddress>
+				>)
 		| null
 	> {
-		const truck = await this.db.trucks.findUnique({
+		return await this.db.truck.findUnique({
 			where: {
 				id: truck_id,
 			},
 			include: {
-				addresses: true,
-				truckModels: true,
-				orders: {
+				departure_address: true,
+				model: true,
+				current_order: {
 					include: {
-						addresses: true,
+						address: true,
 					},
 				},
 			},
 		});
-
-		return truck == null
-			? null
-			: {
-					...truck,
-					longitude: truck.longitude.toNumber(),
-					latitude: truck.latitude.toNumber(),
-					fuel_quantity: truck.fuel_quantity.toNumber(),
-					model: {
-						...truck.truckModels,
-						fuel_capacity:
-							truck.truckModels.fuel_capacity.toNumber(),
-						storage_capacity:
-							truck.truckModels.fuel_capacity.toNumber(),
-					},
-					departure_address: {
-						...truck.addresses,
-						longitude: truck.addresses.longitude.toNumber(),
-						latitude: truck.addresses.latitude.toNumber(),
-					},
-					current_order:
-						truck.orders == null
-							? null
-							: {
-									...truck.orders,
-									total_cost:
-										truck.orders.total_cost.toNumber(),
-									total_weight:
-										truck.orders.total_weight.toNumber(),
-									address: {
-										...truck.orders.addresses,
-										longitude:
-											truck.orders.addresses.longitude.toNumber(),
-										latitude:
-											truck.orders.addresses.latitude.toNumber(),
-									},
-								},
-				};
 	}
 
-	async get_all_trucks(): Promise<Truck[]> {
-		const trucks = await this.db.trucks.findMany();
-		return trucks.map((truck) => {
-			return {
-				...truck,
-				longitude: truck.longitude.toNumber(),
-				latitude: truck.latitude.toNumber(),
-				fuel_quantity: truck.fuel_quantity.toNumber(),
-			};
-		});
+	async get_all_trucks(): Promise<DBTruck[]> {
+		return await this.db.truck.findMany();
 	}
 
-	async insert_truck(truck: Truck): Promise<Truck> {
-		const newTruck = await this.db.trucks.create({
+	async insert_truck(truck: HasUndefined<DBTruck, 'id'>): Promise<DBTruck> {
+		return await this.db.truck.create({
 			data: truck,
 		});
-
-		return {
-			...newTruck,
-			longitude: newTruck.longitude.toNumber(),
-			latitude: newTruck.latitude.toNumber(),
-			fuel_quantity: newTruck.fuel_quantity.toNumber(),
-		};
 	}
 
-	async update_truck(truck: Truck): Promise<void> {
-		await this.db.trucks.update({
+	async update_truck(truck: DBTruck): Promise<void> {
+		await this.db.truck.update({
 			where: {
 				id: truck.id,
 			},
@@ -141,83 +90,51 @@ export class Database {
 		});
 	}
 
-	async get_model(model_id: number): Promise<TruckModel | null> {
-		const model = await this.db.truckModels.findUnique({
+	async get_model(model_id: number): Promise<DBTruckModel | null> {
+		return await this.db.truckModel.findUnique({
 			where: {
 				id: model_id,
 			},
 		});
-
-		return model == null
-			? null
-			: {
-					...model,
-					fuel_capacity: model.fuel_capacity.toNumber(),
-					storage_capacity: model.storage_capacity.toNumber(),
-				};
 	}
 
-	async get_all_models(): Promise<TruckModel[]> {
-		return (await this.db.truckModels.findMany()).map((model) => {
-			return {
-				...model,
-				fuel_capacity: model.fuel_capacity.toNumber(),
-				storage_capacity: model.storage_capacity.toNumber(),
-			};
-		});
+	async get_all_models(): Promise<DBTruckModel[]> {
+		return await this.db.truckModel.findMany();
 	}
 
-	async get_random_model(): Promise<TruckModel | null> {
-		const model = await this.db.truckModels.findFirst({
+	async get_random_model(): Promise<DBTruckModel | null> {
+		return await this.db.truckModel.findFirst({
 			orderBy: {
 				id: 'desc',
 			},
 			skip: Math.floor(
-				Math.random() * (await this.db.truckModels.count()),
+				Math.random() * (await this.db.truckModel.count()),
 			),
 		});
-
-		return model == null
-			? null
-			: {
-					...model,
-					fuel_capacity: model.fuel_capacity.toNumber(),
-					storage_capacity: model.storage_capacity.toNumber(),
-				};
 	}
 
-	async insert_model(model: TruckModel): Promise<TruckModel> {
-		const newModel = await this.db.truckModels.create({
+	async insert_model(
+		model: HasUndefined<DBTruckModel, 'id'>,
+	): Promise<DBTruckModel> {
+		return await this.db.truckModel.create({
 			data: model,
 		});
-
-		return {
-			...newModel,
-			fuel_capacity: newModel.fuel_capacity.toNumber(),
-			storage_capacity: newModel.storage_capacity.toNumber(),
-		};
 	}
 
-	async insert_location(location: any): Promise<any> {
-		return await this.db.truckLocations.create({
+	async insert_location(
+		location: DBTruckLocation,
+	): Promise<DBTruckLocation<Date>> {
+		return await this.db.truckLocation.create({
 			data: location,
 		});
 	}
 
-	async get_random_address(): Promise<Address | null> {
-		const address = await this.db.addresses.findFirst({
+	async get_random_address(): Promise<DBAddress | null> {
+		return await this.db.address.findFirst({
 			orderBy: {
 				id: 'desc',
 			},
-			skip: Math.floor(Math.random() * (await this.db.addresses.count())),
+			skip: Math.floor(Math.random() * (await this.db.address.count())),
 		});
-
-		return address == null
-			? null
-			: {
-					...address,
-					longitude: address.longitude.toNumber(),
-					latitude: address.latitude.toNumber(),
-				};
 	}
 }

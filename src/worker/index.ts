@@ -1,6 +1,6 @@
 import { Kafka, Consumer } from 'kafkajs';
 import { Database } from '../db';
-import { Truck } from '@kaplego/floatcommon';
+import { DBTruck, DBTruckLocation, Truck } from '@kaplego/floatcommon';
 import { readFileSync } from 'fs';
 
 export class FloatWorkerNode {
@@ -71,7 +71,7 @@ export class FloatWorkerNode {
 							latitude,
 							fuel_quantity,
 							state,
-						} as Truck);
+						} as DBTruck);
 
 						await this.db.insert_location({
 							truck_id,

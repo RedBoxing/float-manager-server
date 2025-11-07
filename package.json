@@ -27,7 +27,7 @@
 		"format:write": "prettier . --write"
 	},
 	"dependencies": {
-		"@kaplego/floatcommon": "^1.0.4",
+		"@kaplego/floatcommon": "^1.2.0",
 		"@prisma/client": "^6.19.0",
 		"@types/cors": "^2.8.19",
 		"@types/express": "^5.0.5",

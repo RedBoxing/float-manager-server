@@ -8,47 +8,47 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
-model addresses {
+model address {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   city      String   @db.VarChar(255)
   zip       String   @db.Char(5)
   longitude Decimal  @db.Decimal
   latitude  Decimal  @db.Decimal
-  orders    orders[]
-  trucks    trucks[]
+  orders    order[]
+  trucks    truck[]
 }
 
-model orders {
+model order {
   id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   client_id    String    @db.Uuid
   address_id   String    @db.Uuid
   total_cost   Decimal   @db.Decimal
   total_weight Decimal   @db.Decimal
   status       Int
-  addresses    addresses @relation(fields: [address_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "orders_address_id_addresses_id_fk")
-  users        users     @relation(fields: [client_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "orders_client_id_users_id_fk")
-  trucks       trucks[]
+  address    address @relation(fields: [address_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "orders_address_id_addresses_id_fk")
+  user        user     @relation(fields: [client_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "orders_client_id_users_id_fk")
+  trucks       truck[]
 }
 
-model truckLocations {
+model truckLocation {
   truck_id  String   @db.Uuid
   timestamp DateTime @db.Timestamp(6)
   longitude Decimal  @db.Decimal
   latitude  Decimal  @db.Decimal
-  trucks    trucks   @relation(fields: [truck_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "truckLocations_truck_id_trucks_id_fk")
+  truck    truck   @relation(fields: [truck_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "truckLocations_truck_id_trucks_id_fk")
 
   @@id([truck_id, timestamp], map: "truckLocations_truck_id_timestamp_pk")
 }
 
-model truckModels {
+model truckModel {
   id               Int      @id @default(autoincrement())
   fuel_capacity    Decimal  @db.Decimal
   storage_capacity Decimal  @db.Decimal
   name             String   @db.VarChar(255)
-  trucks           trucks[]
+  trucks           truck[]
 }
 
-model trucks {
+model truck {
   id                   String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   model_id             Int
   departure_address_id String           @db.Uuid
@@ -57,17 +57,17 @@ model trucks {
   current_order_id     String?          @db.Uuid
   state                Int              @default(0)
   fuel_quantity        Decimal          @db.Decimal
-  truckLocations       truckLocations[]
-  orders               orders?          @relation(fields: [current_order_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "trucks_current_order_id_orders_id_fk")
-  addresses            addresses        @relation(fields: [departure_address_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "trucks_departure_address_id_addresses_id_fk")
-  truckModels          truckModels      @relation(fields: [model_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "trucks_model_id_truckModels_id_fk")
+  truckLocation       truckLocation[]
+  current_order               order?          @relation(fields: [current_order_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "trucks_current_order_id_orders_id_fk")
+  departure_address   address         @relation(fields: [departure_address_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "trucks_departure_address_id_addresses_id_fk")
+  model               truckModel      @relation(fields: [model_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "trucks_model_id_truckModels_id_fk")
 }
 
-model users {
+model user {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   username     String   @db.VarChar(255)
   email        String   @unique(map: "users_email_unique") @db.VarChar(255)
   passwordHash String?  @db.VarChar(255)
   admin        Boolean? @default(false)
-  orders       orders[]
+  orders       order[]
 }

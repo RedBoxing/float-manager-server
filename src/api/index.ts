@@ -3,6 +3,7 @@ import { createServer, Server as HttpServer } from 'node:http';
 import { TruckModel, TruckState } from '@kaplego/floatcommon';
 import cors from 'cors';
 import { Database } from '../db';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export class FloatManagerAPIServer {
 	private db: Database;
@@ -39,7 +40,13 @@ export class FloatManagerAPIServer {
 		this.api.post('/trucks/models', async (req, res) => {
 			try {
 				const data: TruckModel = req.body;
-				res.json(await this.db.insert_model(data));
+				res.json(
+					await this.db.insert_model({
+						...data,
+						fuel_capacity: new Decimal(data.fuel_capacity),
+						storage_capacity: new Decimal(data.storage_capacity),
+					}),
+				);
 			} catch (err) {
 				res.json({
 					error: true,
@@ -85,12 +92,11 @@ export class FloatManagerAPIServer {
 			}
 
 			const truck = await this.db.insert_truck({
-				id: '',
 				model_id: model.id,
 				fuel_quantity: model.fuel_capacity,
 				departure_address_id: address.id,
-				longitude: 0.0,
-				latitude: 0.0,
+				longitude: new Decimal(0.0),
+				latitude: new Decimal(0.0),
 				state: TruckState.Normal,
 				current_order_id: null,
 			});
