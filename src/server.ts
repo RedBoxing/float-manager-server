@@ -28,13 +28,12 @@ export class FloatManagerServer {
         rejectUnauthorized: false,
         ca: [Deno.readTextFileSync("certs/ca.crt")],
         key: Deno.readTextFileSync("certs/privkey.pem"),
-        cert: Deno.readTextFileSync("certs/fullchain.pem")
-      }
+        cert: Deno.readTextFileSync("certs/fullchain.pem"),
+      },
     });
 
     this.kafkaConsumer = this.kafka.consumer({
-      groupId:
-        (Deno.env.get("HOSTNAME") || "float-manager-server") + "-consumer",
+      groupId: "float-manager-server",
     });
 
     this.api.get("/health", (req, res) => {
@@ -119,16 +118,12 @@ export class FloatManagerServer {
     return trucks as Truck[];
   }
 
-  async start() {
-    console.log("Starting server");
+  async start_worker() {
+    console.log("Starting worker");
 
     await this.kafkaConsumer.connect();
     await this.kafkaConsumer.subscribe({
       topics: ["truck-telemetry"],
-    });
-
-    this.server.listen(3000, () => {
-      console.log("server running at http://localhost:3000");
     });
 
     await this.kafkaConsumer.run({
@@ -161,6 +156,14 @@ export class FloatManagerServer {
           }
         }
       },
+    });
+  }
+
+  start_api() {
+    console.log("Starting API server");
+
+    this.server.listen(3000, () => {
+      console.log("server running at http://localhost:3000");
     });
   }
 }

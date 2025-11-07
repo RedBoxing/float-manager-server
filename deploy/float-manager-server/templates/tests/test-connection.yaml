@@ -11,5 +11,5 @@ spec:
     - name: wget
       image: busybox
       command: ['wget']
-      args: ['{{ include "float-manager-server.fullname" . }}:{{ .Values.service.port }}']
+      args: ['{{ include "float-manager-server.fullname" . }}-api:{{ .Values.api.service.port }}']
   restartPolicy: Never

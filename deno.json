@@ -11,6 +11,7 @@
     "@std/assert": "jsr:@std/assert@1",
     "@types/express": "npm:@types/express@^5.0.5",
     "@types/pg": "npm:@types/pg@^8.15.6",
+    "commander": "npm:commander@^14.0.2",
     "drizzle-kit": "npm:drizzle-kit@^0.31.6",
     "drizzle-orm": "npm:drizzle-orm@^0.44.7",
     "express": "npm:express@^5.1.0",
