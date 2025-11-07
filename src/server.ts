@@ -7,34 +7,42 @@ import { eq, sql } from "drizzle-orm";
 import { Kafka, Consumer } from "kafkajs";
 import { Truck, WithOneAddress, WithOneModel } from "@kaplego/floatcommon";
 
-export class FloatManagerServer {
-  private db: NodePgDatabase;
-  private api: express.Application;
-  private server: HttpServer;
-  private kafka: Kafka;
-  private kafkaConsumer: Consumer;
+export class FloatManagerBaseServer {
+  protected db: NodePgDatabase;
 
   constructor() {
     this.db = drizzle(Deno.env.get("DATABASE_URL")!);
     migrate(this.db, { migrationsFolder: "./drizzle" });
+  }
+
+  async get_truck(id: string): Promise<Truck | null> {
+    const trucks = await this.db
+      .select()
+      .from(trucksTable)
+      .where(eq(trucksTable.id, id));
+
+    if (trucks.length == 0) {
+      return null;
+    }
+
+    return trucks[0] as Truck;
+  }
+
+  async get_all_trucks(): Promise<Truck[]> {
+    const trucks = await this.db.select().from(trucksTable);
+    return trucks as Truck[];
+  }
+}
+
+export class FloatManagerAPIServer extends FloatManagerBaseServer {
+  private api: express.Application;
+  private server: HttpServer;
+
+  constructor() {
+    super();
 
     this.api = express();
     this.server = createServer(this.api);
-
-    this.kafka = new Kafka({
-      clientId: Deno.env.get("HOSTNAME") || "float-manager-server",
-      brokers: (Deno.env.get("KAFKA_BROKERS") || "").split(";"),
-      ssl: {
-        rejectUnauthorized: false,
-        ca: [Deno.readTextFileSync("certs/ca.crt")],
-        key: Deno.readTextFileSync("certs/privkey.pem"),
-        cert: Deno.readTextFileSync("certs/fullchain.pem"),
-      },
-    });
-
-    this.kafkaConsumer = this.kafka.consumer({
-      groupId: "float-manager-server",
-    });
 
     this.api.get("/health", (req, res) => {
       res.send("OK");
@@ -100,25 +108,39 @@ export class FloatManagerServer {
     });
   }
 
-  async get_truck(id: string): Promise<Truck | null> {
-    const trucks = await this.db
-      .select()
-      .from(trucksTable)
-      .where(eq(trucksTable.id, id));
+  start() {
+    console.log("Starting API server");
 
-    if (trucks.length == 0) {
-      return null;
-    }
+    this.server.listen(3000, () => {
+      console.log("server running at http://localhost:3000");
+    });
+  }
+}
 
-    return trucks[0] as Truck;
+export class FloatWorkerNode extends FloatManagerBaseServer {
+  private kafka: Kafka;
+  private kafkaConsumer: Consumer;
+
+  constructor() {
+    super();
+
+    this.kafka = new Kafka({
+      clientId: Deno.env.get("HOSTNAME") || "float-manager-server",
+      brokers: (Deno.env.get("KAFKA_BROKERS") || "").split(";"),
+      ssl: {
+        rejectUnauthorized: false,
+        ca: [Deno.readTextFileSync("certs/ca.crt")],
+        key: Deno.readTextFileSync("certs/privkey.pem"),
+        cert: Deno.readTextFileSync("certs/fullchain.pem"),
+      },
+    });
+
+    this.kafkaConsumer = this.kafka.consumer({
+      groupId: "float-manager-server",
+    });
   }
 
-  async get_all_trucks(): Promise<Truck[]> {
-    const trucks = await this.db.select().from(trucksTable);
-    return trucks as Truck[];
-  }
-
-  async start_worker() {
+  async start() {
     console.log("Starting worker");
 
     await this.kafkaConsumer.connect();
@@ -156,14 +178,6 @@ export class FloatManagerServer {
           }
         }
       },
-    });
-  }
-
-  start_api() {
-    console.log("Starting API server");
-
-    this.server.listen(3000, () => {
-      console.log("server running at http://localhost:3000");
     });
   }
 }
