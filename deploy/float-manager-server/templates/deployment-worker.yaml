@@ -52,7 +52,7 @@ spec:
           - --allow-net
           - --allow-read
           - src/main.ts
-          -  start-api
+          -  start-worker
           {{- with .Values.worker.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
