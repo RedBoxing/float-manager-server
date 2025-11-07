@@ -17,6 +17,6 @@ RUN --mount=type=secret,id=github_token,env=GITHUB_TOKEN \
     echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > .npmrc && \
     echo "@kaplego:registry=https://npm.pkg.github.com/" >> .npmrc
 
-RUN npm run ci
+RUN npm ci
 
 CMD ["dist/main.js"]
