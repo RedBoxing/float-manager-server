@@ -115,7 +115,7 @@ export class FloatManagerAPIServer extends FloatManagerBaseServer {
       const models = await this.db
         .select()
         .from(truckModelsTable)
-        .orderBy(sql`RAND()`)
+        .orderBy(sql`random()`)
         .limit(1);
       if (models.length == 0) {
         console.error("No models founds");
@@ -125,7 +125,7 @@ export class FloatManagerAPIServer extends FloatManagerBaseServer {
       const randomAddress = await this.db
         .select()
         .from(addressesTable)
-        .orderBy(sql`RAND()`)
+        .orderBy(sql`random()`)
         .limit(1);
       if (models.length == 0) {
         console.error("No addresses found");
