@@ -16,6 +16,7 @@ import {
   WithOneAddress,
   WithOneModel,
 } from "@kaplego/floatcommon";
+import cors from "cors";
 
 export class FloatManagerBaseServer {
   protected db: NodePgDatabase;
@@ -53,6 +54,7 @@ export class FloatManagerAPIServer extends FloatManagerBaseServer {
 
     this.api = express();
     this.server = createServer(this.api);
+    this.api.use(cors());
 
     this.api.get("/health", (req, res) => {
       res.send("OK");
