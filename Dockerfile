@@ -5,6 +5,8 @@ ARG VERSION
 
 EXPOSE 3000
 
+RUN apt update -y && apt install npm -y
+
 WORKDIR /app
 RUN chown -R node:node /app
 USER node
