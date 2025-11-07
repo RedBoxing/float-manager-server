@@ -43,8 +43,16 @@ spec:
           {{- end }}
           image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag | default .Chart.AppVersion }}@{{ .Values.api.image.digest }}"
           imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          command:
+            - deno
           args:
-          - start-api
+          - run
+          - --allow-env
+          - --env-file
+          - --allow-net
+          - --allow-read
+          - src/main.ts
+          -  start-api
           ports:
             - name: http
               containerPort: {{ .Values.api.service.port }}
