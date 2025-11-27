@@ -4,6 +4,7 @@ import { TruckModel, TruckState } from '@kaplego/floatcommon';
 import cors from 'cors';
 import { Database } from '../db';
 import { Decimal } from '@prisma/client/runtime/library';
+import nocache from 'nocache'
 
 export class FloatManagerAPIServer {
 	private db: Database;
@@ -17,6 +18,7 @@ export class FloatManagerAPIServer {
 		this.api = express();
 		this.server = createServer(this.api);
 		this.api.use(cors());
+    this.api.use(nocache());
 
 		this.api.get('/health', (req, res) => {
 			res.send('OK');
