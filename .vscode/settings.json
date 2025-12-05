@@ -1,0 +1,44 @@
+{
+	"terminal.integrated.profiles.linux": {
+		"bash": {
+			"path": "bash",
+			"args": ["--init-file", "<(echo 'set -a; source .env; set +a')"]
+		},
+		"sh": {
+			"path": "sh",
+			"args": ["-c", "set -a; . .env; set +a; sh"]
+		},
+		"zsh": {
+			"path": "zsh",
+			"args": ["-c", "set -a; source .env; set +a; zsh"]
+		}
+	},
+	"terminal.integrated.profiles.osx": {
+		"bash": {
+			"path": "bash",
+			"args": ["--init-file", "<(echo 'set -a; source .env; set +a')"]
+		},
+		"sh": {
+			"path": "sh",
+			"args": ["-c", "set -a; . .env; set +a; sh"]
+		},
+		"zsh": {
+			"path": "zsh",
+			"args": ["-c", "set -a; source .env; set +a; zsh"]
+		}
+	},
+	"terminal.integrated.profiles.windows": {
+		"PowerShell": {
+			"source": "PowerShell",
+			"args": [
+				"-NoExit",
+				"-Command",
+				"Get-Content .env | ForEach-Object { if ($_ -match '^\\s*([^=]+)=(.*)') { [Environment]::SetEnvironmentVariable($matches[1], $matches[2], 'Process') } }"
+			]
+		}
+	},
+	"terminal.integrated.defaultProfile.linux": "bash",
+	"terminal.integrated.defaultProfile.osx": "zsh",
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    "prisma.pinToPrisma6": true
+}
