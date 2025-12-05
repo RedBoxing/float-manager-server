@@ -69,12 +69,25 @@ export class FloatManagerAPIServer {
 		});
 
 		this.api.get('/trucks', async (req, res) => {
-			res.json(await this.db.get_all_trucks());
+			const trucks = await this.db.get_all_trucks();
+
+			res.json(
+				trucks.map((truck) => ({
+					...truck,
+					name: getGeneratedName(truck.id),
+				})),
+			);
 		});
 
 		this.api.get('/trucks/:truck_id', async (req, res) => {
 			const { truck_id } = req.params;
-			res.json(await this.db.get_truck_joined(truck_id));
+
+			const truck = await this.db.get_truck_joined(truck_id);
+
+			res.json({
+				...truck,
+				name: getGeneratedName(truck?.id ?? ''),
+			});
 		});
 
 		this.api.post('/trucks', async (req, res) => {
@@ -105,6 +118,7 @@ export class FloatManagerAPIServer {
 
 			res.json({
 				...truck,
+				name: getGeneratedName(truck.id),
 				model,
 				address,
 			});
@@ -113,98 +127,7 @@ export class FloatManagerAPIServer {
 		this.api.get('/truck-name/:truck_id', async (req, res) => {
 			const { truck_id } = req.params;
 
-			// Two lists of words
-			const adjectives = [
-				'Quantum',
-				'Neural',
-				'Celestial',
-				'Shadow',
-				'Phantom',
-				'Cyber',
-				'Void',
-				'Eldritch',
-				'Nebula',
-				'Solar',
-				'Luminous',
-				'Frost',
-				'Plasma',
-				'Rune',
-				'Nano',
-				'Stellar',
-				'Mystic',
-				'Holographic',
-				'Dimensional',
-				'Iron',
-				'Crystal',
-				'Chaos',
-				'Ethereal',
-				'Glowing',
-				'Mech',
-				'Spectral',
-				'Infinite',
-				'Dark',
-				'Radiant',
-				'Cosmic',
-				'Digital',
-			] as const;
-			const names = [
-				'Blade',
-				'Core',
-				'Matrix',
-				'Orb',
-				'Scepter',
-				'Pulse',
-				'Nexus',
-				'Gauntlet',
-				'Drone',
-				'Sphere',
-				'Circuit',
-				'Titan',
-				'Wraith',
-				'Beacon',
-				'Rift',
-				'Golem',
-				'Haven',
-				'Star',
-				'Portal',
-				'Phantom',
-				'Reactor',
-				'Sentinel',
-				'Storm',
-				'Vault',
-				'Echo',
-				'Monolith',
-				'Hologram',
-				'Relic',
-				'Catalyst',
-				'Dragon',
-				'Array',
-			] as const;
-
-			const getSeedBasedRandom = (s: string, index: number): number => {
-				let hash = 0;
-				for (let i = 0; i < s.length; i++) {
-					hash = (hash << 5) - hash + s.charCodeAt(i);
-					hash |= 0;
-				}
-
-				return Math.abs(hash) % (index + 1);
-			};
-
-			const getRandomElement = (
-				list: typeof adjectives | typeof names,
-				seed: string,
-			): string => {
-				const randomValue = getSeedBasedRandom(seed, list.length);
-				return list[randomValue];
-			};
-
-			const word1: string = getRandomElement(adjectives, truck_id);
-			const word2: string = getRandomElement(names, truck_id);
-
-			const generatedName: string = `${word1} ${word2}`;
-
-			res.send(generatedName);
+			res.send(getGeneratedName(truck_id));
 		});
 	}
 
