@@ -5,6 +5,7 @@ import cors from 'cors';
 import { Database } from '../db';
 import { Decimal } from '@prisma/client/runtime/library';
 import nocache from 'nocache';
+import { getGeneratedName } from './utils';
 
 export class FloatManagerAPIServer {
 	private db: Database;

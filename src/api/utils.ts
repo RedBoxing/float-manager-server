@@ -1,4 +1,4 @@
-function getGeneratedName(seed: string) {
+export function getGeneratedName(seed: string) {
 	// Two lists of words
 	const adjectives = [
 		'Quantum',
