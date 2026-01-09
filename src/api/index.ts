@@ -18,7 +18,11 @@ export class FloatManagerAPIServer {
 
 		this.api = express();
 		this.server = createServer(this.api);
-		this.api.use(cors());
+		this.api.use(
+			cors({
+				origin: '*',
+			}),
+		);
 		this.api.use(nocache());
 
 		this.api.get('/health', (req, res) => {
